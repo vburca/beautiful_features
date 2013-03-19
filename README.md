@@ -2,10 +2,10 @@ beautiful-features
 ==================
 
 Authors:
-  Vlad Burca
+  Vlad Burca,
   Zach Freedman
 
-CPSC415-02, Spring 2013
+CPSC415-02, Spring 2013 ;
 Trinity College, Hartford, CT
 
 Data Mining (CPSC415 - 02) project that tries to detect and predict features that are more likely to get you in BeautifulPeople.com
