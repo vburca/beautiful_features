@@ -10,7 +10,7 @@
 #       Purpose of the script is for the CPSC415-02 (Data Mining)
 #       project, 'What features are most likely to get you into 
 #       BeautifulPeople.com', by Vlad Burca and Zach Freedman, at
-#       Trinity College, Hartford, CT
+#       Trinity College, Hartford, CT8
 #
 
 require 'rubygems'
@@ -35,16 +35,28 @@ FILENAME = FILE_NAME + '.txt'
 # RATINGS and CATEGORIES found on the rating page
 ########################################################
 
-RATINGS = ['RVI1P', 'RVI2P', 'RVI3P', 'RVI4P']
-CATEGORIES = ['profilehaircolor', 'profilejob', 
-              'profileeyecolor', 'profilesmoking',
-              'profilebodytype', 'profilecarowner',
-              'profilezodiacsign', 'profilehomeowner',
-              'profilerelationship'
-             ]
-COUNTRY_CATEGORY = 'rated_profilecountry'
+RATINGS = { :rating_1p => 'RVI1P',
+            :rating_2p => 'RVI2P',
+            :rating_3p => 'RVI3P',
+            :rating_4p => 'RVI4P',
+          }
+
+CATEGORIES = { :hair_color => 'profilehaircolor',
+               :job => 'profilejob',
+               :eye_color => 'profileeyecolor',
+               :smoking => 'profilesmoking',
+               :body_type => 'profilebodytype',
+               :car_owner => 'profilecarowner',
+               :zodiac_sign => 'profilezodiacsign',
+               :home_owner => 'profilehomeowner',
+               :relationship => 'profilerelationship'
+             }
+
+COUNTRY_CATEGORY = 'rated_profilecountry' # goes in :country => ''
 
 ########################################################
+
+ENTRIES = []
 
 
 # Main program
@@ -77,20 +89,52 @@ else
   while page = Nokogiri::HTML(open(html_filename)) rescue nil do
     puts "Scraping through: \t #{html_filename}  ..."
 
-    result = "#{index}" + ' '
+    entry = { :id => index, 
+              :rating_1p => '',
+              :rating_2p => '',
+              :rating_3p => '',
+              :rating_4p => '',
+              :hair_color => '',
+              :job => '',
+              :eye_color => '',
+              :smoking => '',
+              :body_type => '',
+              :car_owner => '',
+              :zodiac_sign => '',
+              :home_owner => '',
+              :relationship => '',
+              :country => '',
+              :complete_entry => false
+            }
 
-    RATINGS.each do |rating|
+    # add the skeleton for the new entry
+    ENTRIES[index] = entry
+
+    ## result = "#{index}" + ' '
+    RATINGS.to_a.each do |rating_key, rating|
       rating_extract = page.css("div[id=#{rating}]")[0]['style']
 
-      rating_value = rating_extract.scan(/(\d+[.]\d+|\d+)/)[0][0]
+      # check if it is the first profile we check
+      if rating_extract
+        rating_value = rating_extract.scan(/(\d+[.]\d+|\d+)/)[0][0]
 
-      # round the value to 2 decimal points
-      rating_value = rating_value.to_f.round(2).to_s
+        # round the value to 2 decimal points
+        rating_value = rating_value.to_f.round(2).to_s
 
-      result = result + rating_value + ' '
+        # we have to add the rating to the previous entry in ENTRIES
+        # (index - 1) = previous index in ENTRIES = id of the entry that we want
+        ENTRIES[index-1][rating_key] = rating_value
+
+        ## result = result + rating_value + ' '
+      end
     end
 
-    CATEGORIES.each do |category|
+    # since we added the ratings for the previous profile, we know that this is done!
+    if index > 1
+      ENTRIES[index-1][:complete_entry] = true
+    end
+
+    CATEGORIES.to_a.each do |category_key, category|
       category_extract = page.css("span[id=#{category}]")[0].text
       category_value = category_extract
 
@@ -108,7 +152,10 @@ else
         category_value = '*'
       end
 
-      result = result + category_value + ' '
+      # just add the category to the current entry
+      ENTRIES[index][category_key] = category_value
+
+      ## result = result + category_value + ' '
     end
 
     country_extract = page.css("td[id=#{COUNTRY_CATEGORY}]")[0].text
@@ -123,10 +170,28 @@ else
       country_value = country_value.join
     end    
 
-    result = result + country_value + ' '
+    # just add the country to the current entry
+    ENTRIES[index][:country] = country_value
 
-    result = result + "\n"
-    data_file.write(result)
+    ## result = result + country_value + ' '
+
+    ## result = result + "\n"
+
+    # Prepare the entry string for output in the data file
+    if index > 1
+      # double check the entry before
+      if ENTRIES[index-1][:complete_entry] == true
+        result = "#{ENTRIES[index-1][:id]}" + ' '
+        ENTRIES[index-1].to_a.each do |key, value|
+          if key != :id and key != :complete_entry
+            result = result + value + ' '
+          end
+        end
+        #puts result
+        result = result + "\n"
+        data_file.write(result)
+      end
+    end
 
     # advance to the next file
     index = index + 1
