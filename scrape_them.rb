@@ -1,7 +1,8 @@
 #
-# File:   scrape_them.rb
-# Date:   18 March 2013
-# Author: Vlad Burca
+# File:     scrape_them.rb
+# Date:     18 March 2013
+# Update:   20 Match 2013 
+# Author:   Vlad Burca
 #
 # Description: 
 #       Ruby script that scrapes the HTML of www.beautifulpeople.com
