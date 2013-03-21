@@ -7,3 +7,17 @@
 7 68.25 84.63 54.6 68.25 Black Fashion Brown No Average No Capricorn No Single UnitedStates 
 8 27.3 54.6 51.87 139.23 DarkBrown Retail LightBrown No Athletic Yes Libra No Married UnitedStates 
 9 32.76 60.06 106.47 73.71 DarkBrown Retail Hazel No Average No Cancer No Single UnitedStates 
+10 117.39 79.17 40.95 35.49 DarkBrown Hospitality Blue No Average Yes Virgo Yes Divorced UnitedStates 
+11 98.28 90.09 54.6 30.03 DarkBrown Marketing DarkBrown No Average No Aries No Single UnitedStates 
+12 24.57 19.11 51.87 177.45 Brown Fashion DarkBrown No Toned Yes Virgo No InArelationship UnitedStates 
+13 43.68 73.71 76.44 79.17 DarkBrown Administration DarkBrown No Average Yes Taurus No Single UnitedStates 
+14 60.06 106.47 40.95 65.52 Brown Entrepreneur Blue No Slim Yes Leo No Single UnitedStates 
+15 21.84 19.11 101.01 131.04 DarkBrown Student Green No Slim Yes Virgo No Single UnitedStates 
+16 21.84 24.57 117.39 109.2 Brown Restaurant Hazel No Athletic Yes Cancer No Single UnitedStates 
+17 13.65 19.11 111.93 128.31 DarkBlonde Artist Blue No Toned Yes Aquarius No Single UnitedStates 
+18 65.52 68.25 73.71 65.52 Black Student DarkBrown No Average Yes Pisces No Single UnitedStates 
+19 38.22 43.68 106.47 84.63 Brown Marketing Brown No Toned Yes Leo No Single UnitedStates 
+20 40.95 19.11 30.03 180.18 Blonde Artist Blue No Slim Yes Leo No Single UnitedStates 
+21 24.57 32.76 70.98 144.69 Blonde Medicine Hazel No Athletic Yes Virgo Yes Single UnitedStates 
+22 21.84 21.84 117.39 114.66 Auburn Student Blue No Slim Yes Scorpio Yes Single UnitedStates 
+23 54.6 51.87 87.36 76.44 Auburn Medicine Blue No Average Yes Aquarius Yes Single UnitedStates 

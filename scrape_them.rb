@@ -74,18 +74,24 @@ else
     puts "No current temporary file that contains last used index."
     puts "Creating a new one... #{TEMP_FILENAME}."
     # start from first ID
-    index = 1
+    start_index = 1
   else
     # there is a last used index file
     # set the index to the last used one + 1
     puts "Found temporary file with last used index."
-    index = temp_file.first.to_i + 1
+    start_index = temp_file.first.to_i + 1
     temp_file.close
-    puts "Starting from index= #{index}."
+    puts "Starting from index= #{start_index}."
   end
+
+  index = start_index
 
   # try and open the HTML corresponding to that female ID
   html_filename = HTML_NAME + "_#{index}" + '.html'
+
+  # to take in account the first entry, which will always be incomplete
+  first = true
+
   while page = Nokogiri::HTML(open(html_filename)) rescue nil do
     puts "Scraping through: \t #{html_filename}  ..."
 
@@ -115,7 +121,7 @@ else
       rating_extract = page.css("div[id=#{rating}]")[0]['style']
 
       # check if it is the first profile we check
-      if rating_extract
+      if rating_extract && first == false
         rating_value = rating_extract.scan(/(\d+[.]\d+|\d+)/)[0][0]
 
         # round the value to 2 decimal points
@@ -130,7 +136,7 @@ else
     end
 
     # since we added the ratings for the previous profile, we know that this is done!
-    if index > 1
+    if index > start_index 
       ENTRIES[index-1][:complete_entry] = true
     end
 
@@ -178,7 +184,7 @@ else
     ## result = result + "\n"
 
     # Prepare the entry string for output in the data file
-    if index > 1
+    if index > start_index
       # double check the entry before
       if ENTRIES[index-1][:complete_entry] == true
         result = "#{ENTRIES[index-1][:id]}" + ' '
@@ -196,16 +202,19 @@ else
     # advance to the next file
     index = index + 1
     html_filename = HTML_NAME + "_#{index}" + '.html'
+
+    first = false
   end
 
   if page.nil?
     puts "No more HTML profiles left to scrape through."
   end
 
-  puts "Writing the last index= #{index - 1} to #{TEMP_FILENAME}."
+  puts "Writing the last index= #{index - 1 - 1} to #{TEMP_FILENAME}."
   # write the last female index that was scraped
   temp_file = File.open(TEMP_FILENAME, 'w') rescue nil
-  temp_file.write(index - 1)
+  # index - 1 is the incomplete one, while index - 1 - 1 is actually the last WRITTEN index
+  temp_file.write(index - 1 - 1)
   temp_file.close
 end
 
