@@ -134,6 +134,12 @@ else
         # (index - 1) = previous index in ENTRIES = id of the entry that we want
         ENTRIES[index-1][rating_key] = rating_value
 
+        age_extract = page.css("td[id=#{AGE_CATEGORY}]")[0].text
+        age_value = age_extract
+
+        # just add the age to the current entry
+        ENTRIES[index-1][:age] = age_value
+
         ## result = result + rating_value + ' '
       end
     end
@@ -184,9 +190,6 @@ else
 
     # just add the country to the current entry
     ENTRIES[index][:country] = country_value
-
-    # just add the age to the current entry
-    ENTRIES[index][:age] = age_value
 
     ## result = result + country_value + ' '
 
