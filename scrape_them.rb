@@ -1,7 +1,7 @@
 #
 # File:     scrape_them.rb
 # Date:     18 March 2013
-# Update:   20 Match 2013 
+# Update:   27 Match 2013 
 # Author:   Vlad Burca
 #
 # Description: 
@@ -53,6 +53,7 @@ CATEGORIES = { :hair_color => 'profilehaircolor',
                :relationship => 'profilerelationship'
              }
 
+AGE_CATEGORY = 'rated_profileage'  # goes in :age => ''
 COUNTRY_CATEGORY = 'rated_profilecountry' # goes in :country => ''
 
 ########################################################
@@ -101,6 +102,7 @@ else
               :rating_2p => '',
               :rating_3p => '',
               :rating_4p => '',
+              :age => '',
               :hair_color => '',
               :job => '',
               :eye_color => '',
@@ -168,6 +170,9 @@ else
     country_extract = page.css("td[id=#{COUNTRY_CATEGORY}]")[0].text
     country_value = country_extract
 
+    age_extract = page.css("td[id=#{AGE_CATEGORY}]")[0].text
+    age_value = age_extract
+
     # deal with whitespace in the category value
     if country_value.include? ' '
       country_value = country_extract.split(' ')
@@ -179,6 +184,9 @@ else
 
     # just add the country to the current entry
     ENTRIES[index][:country] = country_value
+
+    # just add the age to the current entry
+    ENTRIES[index][:age] = age_value
 
     ## result = result + country_value + ' '
 
