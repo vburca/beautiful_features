@@ -1,7 +1,7 @@
 #
 # File:     scrape_them.rb
 # Date:     18 March 2013
-# Update:   27 Match 2013 
+# Update:   31 March 2013 
 # Author:   Vlad Burca
 #
 # Description: 
@@ -50,11 +50,11 @@ CATEGORIES = { :hair_color => 'profilehaircolor',
                :car_owner => 'profilecarowner',
                :zodiac_sign => 'profilezodiacsign',
                :home_owner => 'profilehomeowner',
-               :relationship => 'profilerelationship'
+               :relationship => 'profilerelationship',
+               :country => 'profilecountry'
              }
 
 AGE_CATEGORY = 'rated_profileage'  # goes in :age => ''
-COUNTRY_CATEGORY = 'rated_profilecountry' # goes in :country => ''
 
 ########################################################
 
@@ -137,7 +137,7 @@ else
         age_extract = page.css("td[id=#{AGE_CATEGORY}]")[0].text
         age_value = age_extract
 
-        # just add the age to the current entry
+        # just add the age to the previous entry in ENTRIES
         ENTRIES[index-1][:age] = age_value
 
         ## result = result + rating_value + ' '
@@ -157,7 +157,7 @@ else
       if category_value.include? ' '
         category_value = category_extract.split(' ')
         # capitalize second word in the value
-        category_value[1] = category_value[1].capitalize
+        category_value.map! { |category_value_word| category_value_word.capitalize }
         # re-assemble the new category value
         category_value = category_value.join
       end
@@ -172,28 +172,6 @@ else
 
       ## result = result + category_value + ' '
     end
-
-    country_extract = page.css("td[id=#{COUNTRY_CATEGORY}]")[0].text
-    country_value = country_extract
-
-    age_extract = page.css("td[id=#{AGE_CATEGORY}]")[0].text
-    age_value = age_extract
-
-    # deal with whitespace in the category value
-    if country_value.include? ' '
-      country_value = country_extract.split(' ')
-      # capitalize second word in the value
-      country_value[1] = country_value[1].capitalize
-      # re-assemble the new category value
-      country_value = country_value.join
-    end    
-
-    # just add the country to the current entry
-    ENTRIES[index][:country] = country_value
-
-    ## result = result + country_value + ' '
-
-    ## result = result + "\n"
 
     # Prepare the entry string for output in the data file
     if index > start_index
