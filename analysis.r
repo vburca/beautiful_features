@@ -4,23 +4,21 @@
 # Authors: Vlad Burca
 #          Zach Freedman
 # Date: 30 March 2013
+# Updated: 07 April 2013
 # 
 # Filename: analysis.r
 #
 
 # entry_rating will take one specific entry's ratings for "Absolutely Not,"
-# "No," "Hmmm OK", and "Beautiful" and calculate an average rating for the
+# "No," "Hmmmm OK", and "Beautiful" and calculate an average rating for the
 # applicant. The function designed to calculate average applicant rating
 # assigns negative values to negative ratings and positive values to positive
 # ratings.
 #
-# @param p1, the quantity of "Absolutely Not" ratings
-# @param p2, the quantitiy of "No" ratings
-# @param p3, the quantity of "Hmmmm OK" ratings
-# @param p4, the quantity of "Beautiful" ratings
+# @param entry, the entry from the data
 # @return entry rate, the average rating for the user
 #
-entry_rating <- function(p1, p2, p3, p4) {
+entry_rating <- function(entry) {
   # Weights of the entry rating formula
   weight_1 <- -1
   weight_2 <- -0.5
@@ -30,12 +28,18 @@ entry_rating <- function(p1, p2, p3, p4) {
   # Maximum rate based on the HTML bars
   max_rate <- 274
 
+  # Get the ratings
+  p1 <- entry["Rating Absolutely Not"]
+  p2 <- entry["Rating No"]
+  p3 <- entry["Rating Hmmmm OK"]
+  p4 <- entry["Rating Beautiful"]
+
   # Entry rating formula
   entry_rate <- weight_1 * p1 + 
                 weight_2 * p2 +
                 weight_3 * p3 +
                 weight_4 * p4
-  entry_rate <- entry_rate / ( weight_4 * max_rate)
+  entry_rate <- entry_rate / (weight_4 * max_rate)
 
   return(entry_rate)
 }
@@ -68,10 +72,7 @@ average_rating <- function(column, column_value) {
 
     for (i in 1:n)
       # Compute the average rating
-      avg_rating <- avg_rating + entry_rating(filtered[i, 2], 
-                                              filtered[i, 3],
-                                              filtered[i, 4],
-                                              filtered[i, 5])
+      avg_rating <- avg_rating + entry_rating(filtered[i,])
     avg_rating <- avg_rating / n
 
     return(avg_rating)
@@ -126,6 +127,112 @@ show_histogram <- function(column) {
   # Plot the histogram
   plotrix::barp(averages, col=rainbow(length(labels_) + 10), xlab=column, ylab="Average Ratings", ylim=ylims,
               names.arg=labels_, staxx=TRUE, srt=90, cex=0.5)
+}
+
+linear_rating <- function(entry) {
+  columns <- c("Age", "Hair Color", "Field of Work", "Eye Color", 
+            "Smoking", "Body Type", "Car Owner", "Zodiac Sign", "Home Owner", 
+            "Relationship Status", "Country")
+  ignore_columns <- c("Field of Work", "Smoking", "Car Owner", "Zodiac Sign", 
+            "Home Owner")
+
+  lin_rating <- 0.0
+
+  for (column in columns)
+    if (!(column %in% ignore_columns))
+      lin_rating <- lin_rating + average_rating(column, entry[,column])
+  
+  lin_rating <- lin_rating / (length(columns) - length(ignore_columns))
+
+  return(lin_rating)
+}
+
+linear_ratings <- function(stop1, stop2, stop3) {
+  n <- nrow(girls.valid.data)
+  worst <<- 0
+  bad <<- 0
+  good <<- 0
+  fantastik <<- 0
+
+  for (i in 1:n) {
+    lin_rating <- linear_rating(girls.valid.data[i,])
+
+    print(sprintf("i= %s", i))
+    print(sprintf("rating= %s", lin_rating)) 
+
+    if (lin_rating < stop1) {
+      worst <<- worst + 1
+      next
+    }
+
+    if (lin_rating >= stop1 && lin_rating < stop2) {
+      bad <<- bad + 1
+      next
+    }
+
+    if (lin_rating >= stop2 && lin_rating < stop3) {
+      good <<- good + 1
+      next
+    }
+
+    if (lin_rating >= stop3) {
+      fantastik <<- fantastik + 1
+      next
+    }
+  }
+}
+
+bad_collection <- function(column, threshold) {
+  column_values <- unique(girls.valid.data[,column])
+  bad_coll <- c()
+
+  for (column_value in column_values)
+    if (average_rating(column, column_value) < threshold)
+      bad_coll <- append(bad_coll, column_value)
+
+  return(bad_coll)
+}
+
+decide_entry <- function(entry) {
+  columns <- c("Body Type", "Country", "Relationship Status", "Zodiac Sign")
+  thresholds <- c(.25, .1, 0, .25)
+
+  n <- length(columns)
+
+  for (i in 1:n) {
+    bad_coll <- bad_collection(columns[i], thresholds[i])
+    if (entry[,columns[i]] %in% bad_coll) {
+      # print("Out")
+      return(0)
+    }
+  }
+  # print("In")
+  return(1)
+}
+
+test_tree <- function() {
+  n <- nrow(girls.valid.data)
+
+  true_neg <- 0
+  false_pos <- 0
+
+  for (i in 1:n) {
+    decision <- decide_entry(girls.valid.data[i,])
+    rating <- entry_rating(girls.valid.data[i,])
+
+    print(sprintf("[%s] %s <=> %s", i, decision, rating))
+    if ((rating >= 0) && (decision == 0)) {
+      print(sprintf("True Negative at i= %s", i))
+      true_neg <- true_neg + 1
+    }
+    else
+    if ((rating < 0) && (decision == 1)) {
+      print(sprintf("False Positive at i= %s", i))
+      false_pos <- false_pos + 1
+    }
+  }
+
+  return(c(true_neg, false_pos))
 }
 
 girls.data <- read.delim("data3.txt", header=F, sep=" ")
@@ -265,3 +372,5 @@ for (row in 1:n.rows) {
   girls.valid.data <- rbind(girls.valid.data, girls.data[row,])
   row.names(girls.valid.data) <- 1:nrow(girls.valid.data)
 }
+
+
