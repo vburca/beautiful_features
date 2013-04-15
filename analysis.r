@@ -4,7 +4,7 @@
 # Authors: Vlad Burca
 #          Zach Freedman
 # Date: 30 March 2013
-# Updated: 07 April 2013
+# Updated: 13 April 2013
 # 
 # Filename: analysis.r
 #
@@ -75,7 +75,7 @@ average_rating <- function(column, column_value) {
       avg_rating <- avg_rating + entry_rating(filtered[i,])
     avg_rating <- avg_rating / n
 
-    return(avg_rating)
+    return(avg_rating[1,])
   }
   # No entries found
   return(0)
@@ -129,110 +129,214 @@ show_histogram <- function(column) {
               names.arg=labels_, staxx=TRUE, srt=90, cex=0.5)
 }
 
-linear_rating <- function(entry) {
+average_attribute <- function(column) {
+  column_values <- sort(unique(girls.valid.data[,column]))
+
+  average_attr <- 0.0
+
+  for (column_value in column_values)
+    average_attr <- average_attr + average_rating(column, column_value)
+
+  average_attr <- average_attr / length(column_values)
+
+  return(average_attr)
+}
+
+good_attribute_values <- function(attribute) {
+  good_values <- c()
+
+  # Compute the average value for the given attribute
+  average <- average_attribute(attribute)
+
+  # Get the unique possible values of the current attribute
+  attribute_values <- sort(unique(girls.valid.data[,attribute]))
+
+  # Computing good attribute values
+  for (attribute_value in attribute_values) {
+    if (average_rating(attribute, attribute_value) >= average)
+      good_values <- append(good_values, attribute_value)
+  }
+
+  return(good_values)
+}
+
+generate_errors <- function() {
   columns <- c("Age", "Hair Color", "Field of Work", "Eye Color", 
             "Smoking", "Body Type", "Car Owner", "Zodiac Sign", "Home Owner", 
             "Relationship Status", "Country")
-  ignore_columns <- c("Field of Work", "Smoking", "Car Owner", "Zodiac Sign", 
-            "Home Owner")
 
-  lin_rating <- 0.0
+  attribute_errors <- c()
 
-  for (column in columns)
-    if (!(column %in% ignore_columns))
-      lin_rating <- lin_rating + average_rating(column, entry[,column])
-  
-  lin_rating <- lin_rating / (length(columns) - length(ignore_columns))
-
-  return(lin_rating)
-}
-
-linear_ratings <- function(stop1, stop2, stop3) {
+  # Get number of entries
   n <- nrow(girls.valid.data)
-  worst <<- 0
-  bad <<- 0
-  good <<- 0
-  fantastik <<- 0
 
-  for (i in 1:n) {
-    lin_rating <- linear_rating(girls.valid.data[i,])
+  # For each attribute in the data set
+  for (attribute in columns) {
+    print(sprintf("Attribute= %s", attribute))
 
-    print(sprintf("i= %s", i))
-    print(sprintf("rating= %s", lin_rating)) 
+    good_values <- c()
+    good_guys <- c()
 
-    if (lin_rating < stop1) {
-      worst <<- worst + 1
-      next
+    false <- 0
+    error_rate <- 0.0
+
+    # Computing good attribute values
+    good_values <- good_attribute_values(attribute)
+
+    # print(sprintf("Good values= %s", good_values))
+
+    # For each entry in the data set
+    for (i in 1:n) {
+
+      # print(sprintf("Attribute= %s, iteration= %i", attribute, i))
+
+      # Save the entry
+      entry <- girls.valid.data[i,]
+      # Compute the average rating of the entry, based on users' ratings
+      entry_rate <- entry_rating(entry)
+
+      # Check if the entry's attribute value is a "good" one
+      if (entry[,attribute] %in% good_values) {
+        good_guys <- append(good_guys, i)
+
+        # Check if the entry's rating is good
+        if (entry_rate < 0)
+          false <- false + 1
+      # else if the entry's attribute value is a "bad" one
+      }
+      else 
+        # Check if the entry's rating is bad
+        if (entry_rate >= 0)
+          false <- false + 1
     }
 
-    if (lin_rating >= stop1 && lin_rating < stop2) {
-      bad <<- bad + 1
-      next
-    }
+    # Compute the error rate
+    error_rate <- false / n
 
-    if (lin_rating >= stop2 && lin_rating < stop3) {
-      good <<- good + 1
-      next
-    }
+    # print(sprintf("Error rate= %s", error_rate))
 
-    if (lin_rating >= stop3) {
-      fantastik <<- fantastik + 1
-      next
-    }
+    # Append the error rate to the collection of errors per attribute
+    attribute_errors <- append(attribute_errors, error_rate)
+
   }
+
+  # Write it to a file
+  write(attribute_errors, file="attributes.err", ncolumns = length(attribute_errors))
+
 }
 
-bad_collection <- function(column, threshold) {
-  column_values <- unique(girls.valid.data[,column])
-  bad_coll <- c()
+pick_top_splits <- function(n) {
+  # Grab the attribute errors from the previously generated file
+  attribute.errors <- read.delim("attributes.err", header=F, sep=" ")
+  # Set the columns
+  columns <- c("Age", "Hair Color", "Field of Work", "Eye Color", 
+            "Smoking", "Body Type", "Car Owner", "Zodiac Sign", "Home Owner", 
+            "Relationship Status", "Country")  
+  colnames(attribute.errors)[] <- columns
 
-  for (column_value in column_values)
-    if (average_rating(column, column_value) < threshold)
-      bad_coll <- append(bad_coll, column_value)
+  # Sort by the attribute error
+  attribute.errors <- sort(attribute.errors)
 
-  return(bad_coll)
+  # Check if n is too large and set it to max in that case
+  if (n > length(columns))
+    n = length(columns)
+
+  # Return the best n attribute errors (minimum ones)
+  return(attribute.errors[1:n])
 }
 
-decide_entry <- function(entry) {
-  columns <- c("Body Type", "Country", "Relationship Status", "Zodiac Sign")
-  thresholds <- c(.25, .1, 0, .25)
+find_best_depth <- function() {
+  columns <- c("Age", "Hair Color", "Field of Work", "Eye Color", 
+            "Smoking", "Body Type", "Car Owner", "Zodiac Sign", "Home Owner", 
+            "Relationship Status", "Country")  
+  n <- nrow(girls.valid.data)
 
-  n <- length(columns)
+  # Get the top split points for n = # of attributes
+  top_splits <- pick_top_splits(n)
+  max <- length(top_splits)
 
-  for (i in 1:n) {
-    bad_coll <- bad_collection(columns[i], thresholds[i])
-    if (entry[,columns[i]] %in% bad_coll) {
-      # print("Out")
+  good_hash <- new.env()
+
+  # Generate good attribute values for each of the attribute
+  print("Generating good attribute values...")
+  for (attribute in columns) {
+    cat("\tAttribute= ", attribute, "\n")
+    good_hash[[attribute]] <- good_attribute_values(attribute)
+  }
+
+  error_rates <- c()
+
+  # Start
+  for (i in 1:max) {
+    print(sprintf("Calculating for depth= %s", i))
+    false <- 0
+    error <- 0
+
+    for (j in 1:n) {
+      cat("\tEntry= ", i, "\n")
+      entry <- girls.valid.data[j,]
+
+      for (k in 1:i) {
+        node_attribute <- colnames(top_splits[k])
+
+        cat("\tNode attr= ", node_attribute, "  k= ", k, "\n")
+
+        if (!(entry[,node_attribute] %in% good_hash[[node_attribute]])) {
+          if (entry_rating(entry) >= 0) {
+            false <- false + 1
+            break
+          }
+        }
+        else
+        if (entry[,node_attribute] %in% good_hash[[node_attribute]]) {
+          if (entry_rating(entry) < 0) {
+            false <- false + 1
+            break
+          }
+        }
+      }
+    }
+
+    error <- false / n
+    cat("\tError[", i, "]= ", error, "\n")
+    error_rates <- append(error_rates, error)
+  }
+
+  write(error_rates, file = "tree.err", ncolumns = length(error_rates))
+}
+
+test_entry <- function(depth, id) {
+  columns <- c("Age", "Hair Color", "Field of Work", "Eye Color", 
+            "Smoking", "Body Type", "Car Owner", "Zodiac Sign", "Home Owner", 
+            "Relationship Status", "Country")  
+  n <- nrow(girls.valid.data)
+
+  if (depth > length(columns))
+    depth <- length(columns)
+
+  # Get the top split points for n = # of attributes
+  top_splits <- pick_top_splits(depth)
+
+  good_hash <- new.env()
+
+  interesting_columns <- colnames(top_splits)
+
+  # Generate good attribute values for each of the attribute
+  print("Generating good attribute values...")
+  for (attribute in interesting_columns) {
+    cat("\tAttribute= ", attribute, "\n")
+    good_hash[[attribute]] <- good_attribute_values(attribute)
+  }
+
+  entry <- girls.valid.data[id,]
+  for (i in 1:depth) {
+    node_attribute <- colnames(top_splits[i])
+
+    if (!(entry[,node_attribute] %in% good_hash[[node_attribute]]))
       return(0)
-    }
   }
-  # print("In")
+
   return(1)
-}
-
-test_tree <- function() {
-  n <- nrow(girls.valid.data)
-
-  true_neg <- 0
-  false_pos <- 0
-
-  for (i in 1:n) {
-    decision <- decide_entry(girls.valid.data[i,])
-    rating <- entry_rating(girls.valid.data[i,])
-
-    print(sprintf("[%s] %s <=> %s", i, decision, rating))
-    if ((rating >= 0) && (decision == 0)) {
-      print(sprintf("True Negative at i= %s", i))
-      true_neg <- true_neg + 1
-    }
-    else
-    if ((rating < 0) && (decision == 1)) {
-      print(sprintf("False Positive at i= %s", i))
-      false_pos <- false_pos + 1
-    }
-  }
-
-  return(c(true_neg, false_pos))
 }
 
 girls.data <- read.delim("data3.txt", header=F, sep=" ")
@@ -371,6 +475,9 @@ for (row in 1:n.rows) {
   # Save valid entries in girls.valid.data
   girls.valid.data <- rbind(girls.valid.data, girls.data[row,])
   row.names(girls.valid.data) <- 1:nrow(girls.valid.data)
+
+  write.table(girls.valid.data, file = "valid_data.txt", sep = " ", col.names = FALSE, quote = FALSE)
 }
+
 
 
